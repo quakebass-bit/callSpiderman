@@ -214,8 +214,9 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #555;
+      color: #444;
       font-size: 15px;
+      cursor: pointer;
     }
 
     .standby-screen.visible {
@@ -229,7 +230,7 @@
       z-index: 50;
       display: none;
       flex-direction: column;
-      padding: 24px 20px;
+      padding: 20px 18px 36px;
       overflow-y: auto;
     }
 
@@ -241,7 +242,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       padding-bottom: 12px;
       border-bottom: 1px solid #2a2a32;
     }
@@ -264,21 +265,26 @@
 
     .setting-group {
       margin-bottom: 18px;
+      background: #15151a;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #25252e;
     }
 
     .setting-label {
       display: block;
       font-size: 13px;
-      color: #9ea0a8;
-      margin-bottom: 8px;
+      font-weight: 500;
+      color: #b4b7c2;
+      margin-bottom: 10px;
     }
 
     .setting-input, .setting-select {
       width: 100%;
-      background: #1c1c22;
+      background: #1e1e26;
       border: 1px solid #32323c;
       color: #fff;
-      padding: 12px;
+      padding: 11px;
       border-radius: 10px;
       font-size: 15px;
       outline: none;
@@ -300,6 +306,74 @@
       white-space: nowrap;
     }
 
+    /* Блок диктофона */
+    .rec-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .btn-rec {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .btn-rec.recording {
+      background: #ff9500;
+      color: #000;
+      animation: blink-rec 1s infinite;
+    }
+
+    @keyframes blink-rec {
+      50% { opacity: 0.7; }
+    }
+
+    .btn-preview {
+      padding: 12px 16px;
+      border: 1px solid #3a3a46;
+      border-radius: 10px;
+      background: #252530;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .btn-preview:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pitch-pills {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .pitch-btn {
+      background: #1e1e26;
+      border: 1px solid #32323c;
+      color: #ccc;
+      padding: 10px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .pitch-btn.selected {
+      background: #2c4a36;
+      border-color: #34c759;
+      color: #fff;
+      font-weight: 600;
+    }
+
     .preset-pills {
       display: grid;
       grid-template-columns: 1fr;
@@ -307,10 +381,10 @@
     }
 
     .preset-btn {
-      background: #1c1c22;
+      background: #1e1e26;
       border: 1px solid #32323c;
       color: #ddd;
-      padding: 12px;
+      padding: 11px;
       border-radius: 10px;
       text-align: left;
       font-size: 14px;
@@ -333,14 +407,14 @@
       padding: 15px;
       border: none;
       border-radius: 12px;
-      margin-top: 10px;
+      margin-top: 6px;
       cursor: pointer;
     }
 
     .status-hint {
       font-size: 12px;
-      color: #7d808a;
-      margin-top: 6px;
+      color: #8b8e99;
+      margin-top: 8px;
     }
 
     svg {
@@ -429,8 +503,9 @@
     </div>
   </div>
 
+  <!-- Чёрный экран ожидания и завершённого звонка -->
   <div class="standby-screen" id="standbyScreen">
-    <div id="standbyTimerText">Вызов через 5 сек...</div>
+    <div id="standbyTimerText"></div>
   </div>
 
   <div class="secret-modal" id="secretModal">
@@ -439,8 +514,24 @@
       <button type="button" class="btn-close-modal" id="btnCloseModal">Закрыть</button>
     </div>
 
+    <!-- БЛОК 1: ЗАПИСЬ СВОЕГО ГОЛОСА -->
     <div class="setting-group">
-      <label class="setting-label">1. Аудиозапись из GitHub (папка /audio)</label>
+      <label class="setting-label">1. Сказать фразу в микрофон (с изменением голоса)</label>
+      <div class="rec-controls">
+        <button type="button" class="btn-rec" id="btnRecord">Записать голос</button>
+        <button type="button" class="btn-preview" id="btnPreviewRec" disabled>Прослушать</button>
+      </div>
+      <div class="pitch-pills" id="pitchContainer">
+        <button type="button" class="pitch-btn selected" data-pitch="0.82">Маска героя (ниже)</button>
+        <button type="button" class="pitch-btn" data-pitch="1.18">Питер Паркер (выше)</button>
+        <button type="button" class="pitch-btn" data-pitch="1.0">Обычный тон</button>
+      </div>
+      <div class="status-hint" id="recStatus">Нажми «Записать», скажи текст и нажми «Стоп»</div>
+    </div>
+
+    <!-- БЛОК 2: MP3 ИЗ GITHUB -->
+    <div class="setting-group">
+      <label class="setting-label">2. Или выбрать готовый MP3 из GitHub (/audio)</label>
       <div class="row-flex">
         <select class="setting-select" id="trackSelect">
           <option value="">Загрузка списка...</option>
@@ -450,38 +541,28 @@
       <div class="status-hint" id="githubStatus">Проверяем папку audio...</div>
     </div>
 
+    <!-- БЛОК 3: ФИЛЬТР СВЯЗИ -->
     <div class="setting-group">
-      <label class="setting-label">Или выбрать MP3 прямо с телефона (разово)</label>
-      <input type="file" accept="audio/*" class="setting-input" id="localAudioInput" />
-    </div>
-
-    <div class="setting-group">
-      <label class="setting-label">2. Эффект голоса (при нажатии «Динамик»)</label>
+      <label class="setting-label">3. Эффект рации/телефона (при нажатии «Динамик»)</label>
       <div class="preset-pills">
-        <button type="button" class="preset-btn" data-preset="clean">Оригинал (без фильтра, чистый MP3)</button>
+        <button type="button" class="preset-btn" data-preset="clean">Оригинал (без частотного фильтра)</button>
         <button type="button" class="preset-btn selected" data-preset="gsm">Сотовая связь (реалистичный телефон)</button>
         <button type="button" class="preset-btn" data-preset="walkie">Рация / Маска героя (плотный фильтр)</button>
       </div>
     </div>
 
+    <!-- БЛОК 4: ИМЯ, ФОН, ЗАДЕРЖКА -->
     <div class="setting-group">
-      <label class="setting-label">3. Имя звонящего</label>
-      <input type="text" class="setting-input" id="inputHeroName" value="Человек-паук" />
-    </div>
-
-    <div class="setting-group">
-      <label class="setting-label">4. Сменить картинку фона (сохранится в телефоне)</label>
-      <input type="file" accept="image/*" class="setting-input" id="bgImageInput" />
-    </div>
-
-    <div class="setting-group">
-      <label class="setting-label">5. Задержка перед звонком (чтобы положить телефон)</label>
-      <select class="setting-select" id="delaySelect">
-        <option value="0">Сразу (0 сек)</option>
-        <option value="5">Через 5 секунд</option>
-        <option value="10">Через 10 секунд</option>
-        <option value="15">Через 15 секунд</option>
+      <label class="setting-label">4. Имя звонящего и задержка старта</label>
+      <input type="text" class="setting-input" id="inputHeroName" value="Человек-паук" style="margin-bottom: 10px;" />
+      <select class="setting-select" id="delaySelect" style="margin-bottom: 10px;">
+        <option value="0">Звонок сразу (0 сек)</option>
+        <option value="5">Задержка 5 секунд (успеть положить)</option>
+        <option value="10">Задержка 10 секунд</option>
+        <option value="15">Задержка 15 секунд</option>
       </select>
+      <label class="setting-label" style="margin-top: 6px;">Сменить картинку фона (опционально):</label>
+      <input type="file" accept="image/*" class="setting-input" id="bgImageInput" />
     </div>
 
     <button type="button" class="btn-launch" id="btnStartScenario">Применить и запустить вызов</button>
@@ -512,7 +593,6 @@
     const trackSelect = document.getElementById('trackSelect');
     const btnRefreshTracks = document.getElementById('btnRefreshTracks');
     const githubStatus = document.getElementById('githubStatus');
-    const localAudioInput = document.getElementById('localAudioInput');
     const inputHeroName = document.getElementById('inputHeroName');
     const bgImageInput = document.getElementById('bgImageInput');
     const delaySelect = document.getElementById('delaySelect');
@@ -520,12 +600,26 @@
     const standbyScreen = document.getElementById('standbyScreen');
     const standbyTimerText = document.getElementById('standbyTimerText');
 
+    // Элементы диктофона
+    const btnRecord = document.getElementById('btnRecord');
+    const btnPreviewRec = document.getElementById('btnPreviewRec');
+    const recStatus = document.getElementById('recStatus');
+
     let isSpeakerOn = false;
+    let isSleepMode = false;
     let currentPreset = localStorage.getItem('hero_preset') || 'gsm';
     let selectedAudioUrl = localStorage.getItem('hero_track_url') || '';
     let callTimerInterval = null;
     let ringtoneInterval = null;
     let callSeconds = 0;
+
+    // Переменные для записи и смены тона голоса
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let rawRecordedBuffer = null;
+    let processedVoiceUrl = null;
+    let selectedPitch = 0.82;
+    let isRecording = false;
 
     let audioCtx = null;
     let sourceNode = null;
@@ -609,13 +703,152 @@
       }
     }
 
+    // ==========================================
+    // ИЗМЕНЕНИЕ ТОНА ГОЛОСА (ГРАНУЛЯРНЫЙ PITCH SHIFT С СОХРАНЕНИЕМ СКОРОСТИ)
+    // ==========================================
+    function pitchShiftBuffer(audioBuffer, pitchFactor) {
+      if (pitchFactor === 1.0) return audioBuffer;
+
+      const sampleRate = audioBuffer.sampleRate;
+      const inputData = audioBuffer.getChannelData(0);
+      const length = inputData.length;
+      const outputBuffer = new AudioBuffer({ length, numberOfChannels: 1, sampleRate });
+      const outputData = outputBuffer.getChannelData(0);
+
+      const grainSize = Math.floor(sampleRate * 0.045); // 45 мс окно
+      const overlap = Math.floor(grainSize * 0.5);
+      const step = grainSize - overlap;
+
+      for (let outPos = 0; outPos < length - grainSize; outPos += step) {
+        for (let i = 0; i < grainSize; i++) {
+          // Окно Ханна для плавной склейки без щелчков
+          const win = 0.5 * (1 - Math.cos((2 * Math.PI * i) / grainSize));
+          const readIdx = outPos + i * pitchFactor;
+          const idx0 = Math.floor(readIdx);
+          const frac = readIdx - idx0;
+          if (idx0 + 1 < length) {
+            const sample = inputData[idx0] * (1 - frac) + inputData[idx0 + 1] * frac;
+            outputData[outPos + i] += sample * win;
+          }
+        }
+      }
+      return outputBuffer;
+    }
+
+    // Конвертация AudioBuffer в WAV Blob для воспроизведения в <audio>
+    function audioBufferToWavBlob(buffer) {
+      const numOfChan = 1;
+      const length = buffer.length * numOfChan * 2 + 44;
+      const out = new ArrayBuffer(length);
+      const view = new DataView(out);
+      const sampleRate = buffer.sampleRate;
+      const channelData = buffer.getChannelData(0);
+
+      const writeString = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + buffer.length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numOfChan, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, buffer.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < buffer.length; i++) {
+        let s = Math.max(-1, Math.min(1, channelData[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        offset += 2;
+      }
+      return new Blob([out], { type: 'audio/wav' });
+    }
+
+    function rebuildVoiceRecording() {
+      if (!rawRecordedBuffer) return;
+      const shifted = pitchShiftBuffer(rawRecordedBuffer, selectedPitch);
+      const wavBlob = audioBufferToWavBlob(shifted);
+      if (processedVoiceUrl) URL.revokeObjectURL(processedVoiceUrl);
+      processedVoiceUrl = URL.createObjectURL(wavBlob);
+      selectedAudioUrl = processedVoiceUrl;
+      btnPreviewRec.disabled = false;
+      recStatus.textContent = 'Готово! Запись активна для следующего звонка.';
+    }
+
+    // Выбор тембра голоса
+    document.querySelectorAll('.pitch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedPitch = parseFloat(btn.dataset.pitch);
+        rebuildVoiceRecording();
+      });
+    });
+
+    // Кнопка записи с микрофона
+    btnRecord.addEventListener('click', async () => {
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          recordedChunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            recStatus.textContent = 'Обрабатываем тембр...';
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+            const arrayBuf = await blob.arrayBuffer();
+            const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+            rawRecordedBuffer = await tempCtx.decodeAudioData(arrayBuf);
+            rebuildVoiceRecording();
+          };
+
+          mediaRecorder.start();
+          isRecording = true;
+          btnRecord.textContent = 'Стоп (идёт запись...)';
+          btnRecord.classList.add('recording');
+          btnPreviewRec.disabled = true;
+          recStatus.textContent = 'Говорите в микрофон...';
+        } catch (err) {
+          recStatus.textContent = 'Нет доступа к микрофону (разрешите в браузере)';
+        }
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        btnRecord.textContent = 'Перезаписать голос';
+        btnRecord.classList.remove('recording');
+      }
+    });
+
+    // Кнопка предпрослушивания записанного голоса
+    btnPreviewRec.addEventListener('click', () => {
+      if (!processedVoiceUrl) return;
+      const previewAudio = new Audio(processedVoiceUrl);
+      previewAudio.play();
+    });
+
+    // ==========================================
+    // ЛОГИКА ЗВОНКА
+    // ==========================================
     function startRingtone() {
       stopRingtone();
+      isSleepMode = false;
+      standbyScreen.classList.remove('visible');
       if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
 
       ringtonePlayer.currentTime = 0;
       ringtonePlayer.play().catch(() => {
-        // Если браузер заблокировал автоплей или файл не найден — включаем синтезатор
         const playTone = () => {
           if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
           try {
@@ -715,14 +948,25 @@
         callerStatusEl.textContent = 'Входящий вызов';
         isSpeakerOn = false;
         btnSpeaker.classList.remove('active');
-      }, 1200);
+
+        isSleepMode = true;
+        standbyTimerText.textContent = '';
+        standbyScreen.classList.add('visible');
+      }, 1000);
     }
+
+    standbyScreen.addEventListener('click', () => {
+      if (isSleepMode) {
+        isSleepMode = false;
+        standbyScreen.classList.remove('visible');
+      }
+    });
 
     btnDecline.addEventListener('click', finishCall);
     btnEndCall.addEventListener('click', finishCall);
     voicePlayer.addEventListener('ended', finishCall);
 
-    // Открытие секретного меню: 1) удержание 1.5 сек на имени ИЛИ 2) тройной тап по "Входящий вызов"
+    // Открытие секретного меню
     let pressTimer = null;
     const openSecretMenu = () => {
       stopRingtone();
@@ -794,7 +1038,7 @@
           renderTrackOptions(parsed);
           githubStatus.textContent = `Из кэша: ${parsed.length}`;
         } else {
-          githubStatus.textContent = 'Папка audio на GitHub не найдена (проверь структуру репозитория)';
+          githubStatus.textContent = 'Папка audio на GitHub не найдена';
         }
       }
     }
@@ -817,20 +1061,14 @@
       }
     }
 
+    // Если выбрали трек из списка GitHub — переключаемся на него
     trackSelect.addEventListener('change', () => {
       selectedAudioUrl = trackSelect.value;
       localStorage.setItem('hero_track_url', selectedAudioUrl);
+      recStatus.textContent = 'Выбран файл с GitHub (запись с микрофона отключена)';
     });
 
     btnRefreshTracks.addEventListener('click', loadGithubTracks);
-
-    localAudioInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        selectedAudioUrl = URL.createObjectURL(file);
-        githubStatus.textContent = `Выбран локальный файл: ${file.name}`;
-      }
-    });
 
     bgImageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -851,12 +1089,14 @@
       callerNameEl.textContent = newName;
       localStorage.setItem('hero_name', newName);
 
-      if (trackSelect.value && !localAudioInput.files.length) {
+      // Если свежая голосовая запись не активна, берём выбранный трек из списка GitHub
+      if (!selectedAudioUrl && trackSelect.value) {
         selectedAudioUrl = trackSelect.value;
         localStorage.setItem('hero_track_url', selectedAudioUrl);
       }
 
       secretModal.classList.remove('open');
+      isSleepMode = false;
       const delay = parseInt(delaySelect.value, 10);
 
       if (delay > 0) {
@@ -878,7 +1118,6 @@
       }
     });
 
-    // Сброс старого кэша Service Worker, чтобы подтянулся новый код
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         regs.forEach(r => r.update());
