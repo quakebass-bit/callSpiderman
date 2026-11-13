@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Вызов</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* Фоновое изображение */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      background-image: url('img/hero.jpg');
+      background-size: cover;
+      background-position: center top;
+      z-index: 1;
+      transition: filter 0.4s ease, transform 0.4s ease;
+    }
+
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.65) 0%,
+        rgba(0, 0, 0, 0.15) 35%,
+        rgba(0, 0, 0, 0.25) 65%,
+        rgba(0, 0, 0, 0.85) 100%
+      );
+      z-index: 2;
+      transition: background 0.4s ease;
+    }
+
+    body.in-call .bg-layer {
+      filter: brightness(0.65) blur(3px);
+      transform: scale(1.03);
+    }
+
+    /* Основной контейнер звонка */
+    .call-screen {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: calc(env(safe-area-inset-top, 24px) + 36px) 24px calc(env(safe-area-inset-bottom, 24px) + 36px);
+    }
+
+    /* Верхняя часть с именем */
+    .caller-info {
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .caller-name {
+      font-size: 36px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+
+    .caller-status {
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.88);
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Экран 1: Кнопки входящего вызова */
+    .incoming-controls {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 16px 12px;
+    }
+
+    .btn-circle-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-circle {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      transition: transform 0.15s ease;
+    }
+
+    .btn-circle:active {
+      transform: scale(0.92);
+    }
+
+    .btn-decline {
+      background: #ff3b30;
+    }
+
+    .btn-accept {
+      background: #34c759;
+      animation: pulse-green 1.8s infinite;
+    }
+
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.65); }
+      70% { box-shadow: 0 0 0 20px rgba(52, 199, 89, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+
+    .btn-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Экран 2: Сетка кнопок во время разговора */
+    .active-controls {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 36px;
+      padding-bottom: 10px;
+    }
+
+    body.in-call .incoming-controls {
+      display: none;
+    }
+
+    body.in-call .active-controls {
+      display: flex;
+    }
+
+    .call-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px 26px;
+      width: 100%;
+      max-width: 310px;
+    }
+
+    .grid-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .grid-btn {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.12s ease;
+    }
+
+    .grid-btn:active {
+      transform: scale(0.93);
+    }
+
+    .grid-btn.active {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .grid-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+    }
+
+    /* Оверлей ожидания (таймер отложенного звонка) */
+    .standby-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      font-size: 14px;
+    }
+
+    .standby-screen.visible {
+      display: flex;
+    }
+
+    /* Секретная панель настроек */
+    .secret-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(12, 12, 16, 0.96);
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      padding: 24px 20px;
+      overflow-y: auto;
+    }
+
+    .secret-modal.open {
+      display: flex;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2a2a32;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .btn-close-modal {
+      background: #2c2c35;
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .setting-group {
+      margin-bottom: 18px;
+    }
+
+    .setting-label {
+      display: block;
+      font-size: 13px;
+      color: #9ea0a8;
+      margin-bottom: 8px;
+    }
+
+    .setting-input, .setting-select {
+      width: 100%;
+      background: #1c1c22;
+      border: 1px solid #32323c;
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .row-flex {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-small {
+      background: #2b5278;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .preset-pills {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .preset-btn {
+      background: #1c1c22;
+      border: 1px solid #32323c;
+      color: #ddd;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .preset-btn.selected {
+      background: #1f3a52;
+      border-color: #4da3ff;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .btn-launch {
+      width: 100%;
+      background: #34c759;
+      color: #000;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .status-hint {
+      font-size: 12px;
+      color: #7d808a;
+      margin-top: 6px;
+    }
+
+    svg {
+      width: 30px;
+      height: 30px;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Фон -->
+  <div class="bg-layer" id="bgLayer"></div>
+  <div class="bg-overlay"></div>
+
+  <!-- Экран звонка -->
+  <div class="call-screen">
+    <div class="caller-info">
+      <div class="caller-name" id="callerName">Человек-паук</div>
+      <div class="caller-status" id="callerStatus">Входящий вызов</div>
+    </div>
+
+    <!-- Кнопки входящего вызова -->
+    <div class="incoming-controls">
+      <div class="btn-circle-wrap">
+        <button class="btn-circle btn-decline" id="btnDecline" aria-label="Отклонить">
+          <svg viewBox="0 0 24 24" style="transform: rotate(135deg);"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 13.93 3 5a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.25 1.01l-2.2 2.2z"/></svg>
+        </button>
+        <span class="btn-label">Отклонить</span>
+      </div>
+
+      <div class="btn-circle-wrap">
+        <button class="btn-circle btn-accept" id="btnAccept" aria-label="Ответить">
+          <svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 13.93 3 5a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.25 1.01l-2.2 2.2z"/></svg>
+        </button>
+        <span class="btn-label">Ответить</span>
+      </div>
+    </div>
+
+    <!-- Кнопки активного разговора -->
+    <div class="active-controls">
+      <div class="call-grid">
+        <div class="grid-item">
+          <button class="grid-btn" id="btnMute">
+            <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 003-3V5a3 3 0 00-6 0v6a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 0014 0h-2zm-4 8.93V22h-2v-2.07A8.001 8.001 0 014 12h2a6 6 0 0012 0h2a8.001 8.001 0 01-7 7.93z"/></svg>
+          </button>
+          <span class="grid-label">Выкл. звук</span>
+        </div>
+
+        <div class="grid-item">
+          <button class="grid-btn" id="btnKeypad">
+            <svg viewBox="0 0 24 24"><path d="M12 19a2 2 0 100 4 2 2 0 000-4zM6 1a2 2 0 100 4 2 2 0 000-4zm0 6a2 2 0 100 4 2 2 0 000-4zm0 6a2 2 0 100 4 2 2 0 000-4zm12-8a2 2 0 100-4 2 2 0 000 4zm-6 8a2 2 0 100 4 2 2 0 000-4zm6 0a2 2 0 100 4 2 2 0 000-4zm0-6a2 2 0 100 4 2 2 0 000-4zm-6 0a2 2 0 100 4 2 2 0 000-4zm0-6a2 2 0 100 4 2 2 0 000-4z"/></svg>
+          </button>
+          <span class="grid-label">Клавиши</span>
+        </div>
+
+        <div class="grid-item">
+          <button class="grid-btn" id="btnSpeaker">
+            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0014 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </button>
+          <span class="grid-label">Динамик</span>
+        </div>
+
+        <div class="grid-item">
+          <button class="grid-btn" id="btnAddCall">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+          <span class="grid-label">Добавить</span>
+        </div>
+
+        <div class="grid-item">
+          <button class="grid-btn" id="btnVideo">
+            <svg viewBox="0 0 24 24"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>
+          </button>
+          <span class="grid-label">Видео</span>
+        </div>
+
+        <div class="grid-item">
+          <button class="grid-btn" id="btnContacts">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </button>
+          <span class="grid-label">Контакты</span>
+        </div>
+      </div>
+
+      <button class="btn-circle btn-decline" id="btnEndCall" aria-label="Завершить">
+        <svg viewBox="0 0 24 24" style="transform: rotate(135deg);"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 011 1V20a1 1 0 01-1 1C10.07 21 3 13.93 3 5a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.46.57 3.58a1 1 0 01-.25 1.01l-2.2 2.2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Чёрный экран ожидания таймера -->
+  <div class="standby-screen" id="standbyScreen">
+    <div id="standbyTimerText">Вызов через 5 сек...</div>
+  </div>
+
+  <!-- Скрытая панель управления (открывается удержанием на имени 2 сек) -->
+  <div class="secret-modal" id="secretModal">
+    <div class="modal-header">
+      <div class="modal-title">Панель управления вызовом</div>
+      <button class="btn-close-modal" id="btnCloseModal">Закрыть</button>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">1. Аудиозапись из GitHub (папка /audio)</label>
+      <div class="row-flex">
+        <select class="setting-select" id="trackSelect">
+          <option value="">Загрузка списка...</option>
+        </select>
+        <button class="btn-small" id="btnRefreshTracks">Обновить</button>
+      </div>
+      <div class="status-hint" id="githubStatus">Проверяем папку audio...</div>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">Или выбрать MP3 прямо с телефона (разово)</label>
+      <input type="file" accept="audio/*" class="setting-input" id="localAudioInput" />
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">2. Эффект голоса (при нажатии «Динамик»)</label>
+      <div class="preset-pills" id="presetContainer">
+        <button class="preset-btn" data-preset="clean">Оригинал (без фильтра, чистый MP3)</button>
+        <button class="preset-btn selected" data-preset="gsm">Сотовая связь (реалистичный телефон)</button>
+        <button class="preset-btn" data-preset="walkie">Рация / Маска героя (плотный фильтр)</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">3. Имя звонящего</label>
+      <input type="text" class="setting-input" id="inputHeroName" value="Человек-паук" />
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">4. Сменить картинку фона (сохранится в телефоне)</label>
+      <input type="file" accept="image/*" class="setting-input" id="bgImageInput" />
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">5. Задержка перед звонком (чтобы положить телефон)</label>
+      <select class="setting-select" id="delaySelect">
+        <option value="0">Сразу (0 сек)</option>
+        <option value="5">Через 5 секунд</option>
+        <option value="10">Через 10 секунд</option>
+        <option value="15">Через 15 секунд</option>
+      </select>
+    </div>
+
+    <button class="btn-launch" id="btnStartScenario">Применить и запустить вызов</button>
+  </div>
+
+  <!-- Скрытый аудиоплеер -->
+  <audio id="voicePlayer" crossorigin="anonymous" preload="auto"></audio>
+
+  <script>
+    // ==========================================
+    // НАСТРОЙ ТВОЙ GITHUB ЗДЕСЬ:
+    // ==========================================
+    const GITHUB_CONFIG = {
+      username: 'quakebass-bit',   // Например: 'alexey-dev'
+      repo: 'callSpiderman',         // Например: 'hero-call'
+      folder: 'audio'                   // Папка с MP3 файлами
+    };
+
+    // Элементы интерфейса
+    const callerNameEl = document.getElementById('callerName');
+    const callerStatusEl = document.getElementById('callerStatus');
+    const btnAccept = document.getElementById('btnAccept');
+    const btnDecline = document.getElementById('btnDecline');
+    const btnEndCall = document.getElementById('btnEndCall');
+    const btnSpeaker = document.getElementById('btnSpeaker');
+    const voicePlayer = document.getElementById('voicePlayer');
+    const bgLayer = document.getElementById('bgLayer');
+
+    // Элементы скрытого меню
+    const secretModal = document.getElementById('secretModal');
+    const btnCloseModal = document.getElementById('btnCloseModal');
+    const trackSelect = document.getElementById('trackSelect');
+    const btnRefreshTracks = document.getElementById('btnRefreshTracks');
+    const githubStatus = document.getElementById('githubStatus');
+    const localAudioInput = document.getElementById('localAudioInput');
+    const inputHeroName = document.getElementById('inputHeroName');
+    const bgImageInput = document.getElementById('bgImageInput');
+    const delaySelect = document.getElementById('delaySelect');
+    const btnStartScenario = document.getElementById('btnStartScenario');
+    const standbyScreen = document.getElementById('standbyScreen');
+    const standbyTimerText = document.getElementById('standbyTimerText');
+
+    // Состояние приложения
+    let isSpeakerOn = false;
+    let currentPreset = localStorage.getItem('hero_preset') || 'gsm';
+    let selectedAudioUrl = localStorage.getItem('hero_track_url') || '';
+    let callTimerInterval = null;
+    let ringtoneInterval = null;
+    let callSeconds = 0;
+
+    // Web Audio API для фильтра рации/телефона и гудков
+    let audioCtx = null;
+    let sourceNode = null;
+    let highpassFilter = null;
+    let lowpassFilter = null;
+    let gainNode = null;
+    let waveShaper = null;
+
+    // Восстановление сохранённых настроек
+    const savedName = localStorage.getItem('hero_name');
+    if (savedName) {
+      callerNameEl.textContent = savedName;
+      inputHeroName.value = savedName;
+    }
+
+    const savedBg = localStorage.getItem('hero_bg_data');
+    if (savedBg) {
+      bgLayer.style.backgroundImage = `url(${savedBg})`;
+    }
+
+    // Инициализация Web Audio API
+    function initAudioEngine() {
+      if (audioCtx) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+
+      sourceNode = audioCtx.createMediaElementSource(voicePlayer);
+      highpassFilter = audioCtx.createBiquadFilter();
+      lowpassFilter = audioCtx.createBiquadFilter();
+      waveShaper = audioCtx.createWaveShaper();
+      gainNode = audioCtx.createGain();
+
+      highpassFilter.type = 'highpass';
+      lowpassFilter.type = 'lowpass';
+
+      sourceNode.connect(highpassFilter);
+      highpassFilter.connect(lowpassFilter);
+      lowpassFilter.connect(waveShaper);
+      waveShaper.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      applyAudioFilter();
+    }
+
+    // Кривая лёгкого перегруза для эффекта рации
+    function makeDistortionCurve(amount) {
+      const n_samples = 44100;
+      const curve = new Float32Array(n_samples);
+      for (let i = 0; i < n_samples; ++i) {
+        const x = (i * 2) / n_samples - 1;
+        curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+      }
+      return curve;
+    }
+
+    // Применение фильтра в зависимости от кнопки "Динамик" и выбранного пресета
+    function applyAudioFilter() {
+      if (!audioCtx) return;
+
+      if (!isSpeakerOn) {
+        // Режим "у уха" (громкая связь выключена): тише и узкий телефонный спектр
+        highpassFilter.frequency.value = 450;
+        lowpassFilter.frequency.value = 2800;
+        waveShaper.curve = null;
+        gainNode.gain.value = 0.45;
+        return;
+      }
+
+      // Режим "Громкая связь" включена:
+      gainNode.gain.value = 1.35;
+      if (currentPreset === 'clean') {
+        highpassFilter.frequency.value = 20;
+        lowpassFilter.frequency.value = 20000;
+        waveShaper.curve = null;
+      } else if (currentPreset === 'gsm') {
+        highpassFilter.frequency.value = 300;
+        lowpassFilter.frequency.value = 3400;
+        waveShaper.curve = makeDistortionCurve(2);
+      } else if (currentPreset === 'walkie') {
+        highpassFilter.frequency.value = 550;
+        lowpassFilter.frequency.value = 2500;
+        waveShaper.curve = makeDistortionCurve(12);
+      }
+    }
+
+    // Синтезатор мелодии звонка (работает даже без файла ringtone.mp3)
+    function startRingtone() {
+      stopRingtone();
+      const playTone = () => {
+        if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+        try {
+          if (!audioCtx) initAudioEngine();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // До
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // Ми
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.3); // Соль
+          g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+          osc.connect(g);
+          g.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.85);
+        } catch (e) {}
+      };
+      playTone();
+      ringtoneInterval = setInterval(playTone, 2200);
+    }
+
+    function stopRingtone() {
+      if (ringtoneInterval) clearInterval(ringtoneInterval);
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+
+    // Короткий гудок завершения вызова
+    function playEndBeep() {
+      try {
+        if (!audioCtx) initAudioEngine();
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.frequency.value = 425;
+        g.gain.value = 0.15;
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {}
+    }
+
+    // Формат таймера 00:00
+    function formatTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    // Принятие звонка
+    btnAccept.addEventListener('click', () => {
+      initAudioEngine();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      stopRingtone();
+      document.body.classList.add('in-call');
+      isSpeakerOn = false;
+      btnSpeaker.classList.remove('active');
+      applyAudioFilter();
+
+      callSeconds = 0;
+      callerStatusEl.textContent = '00:00';
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        callerStatusEl.textContent = formatTime(callSeconds);
+      }, 1000);
+
+      if (selectedAudioUrl) {
+        voicePlayer.src = selectedAudioUrl;
+        voicePlayer.play().catch(err => console.log('Ошибка воспроизведения:', err));
+      }
+    });
+
+    // Переключение кнопки "Динамик" (Громкая связь)
+    btnSpeaker.addEventListener('click', () => {
+      isSpeakerOn = !isSpeakerOn;
+      btnSpeaker.classList.toggle('active', isSpeakerOn);
+      applyAudioFilter();
+    });
+
+    // Визуальный отклик для остальных кнопок сетки
+    ['btnMute', 'btnKeypad', 'btnAddCall', 'btnVideo', 'btnContacts'].forEach(id => {
+      const btn = document.getElementById(id);
+      btn.addEventListener('click', () => btn.classList.toggle('active'));
+    });
+
+    // Завершение звонка
+    function finishCall() {
+      stopRingtone();
+      voicePlayer.pause();
+      voicePlayer.currentTime = 0;
+      if (callTimerInterval) clearInterval(callTimerInterval);
+      playEndBeep();
+
+      callerStatusEl.textContent = 'Вызов завершён';
+      setTimeout(() => {
+        document.body.classList.remove('in-call');
+        callerStatusEl.textContent = 'Входящий вызов';
+        isSpeakerOn = false;
+        btnSpeaker.classList.remove('active');
+      }, 1200);
+    }
+
+    btnDecline.addEventListener('click', finishCall);
+    btnEndCall.addEventListener('click', finishCall);
+    voicePlayer.addEventListener('ended', finishCall);
+
+    // ==========================================
+    // СЕКРЕТНОЕ МЕНЮ (удержание 2 сек на имени)
+    // ==========================================
+    let pressTimer = null;
+
+    const startPress = () => {
+      pressTimer = setTimeout(() => {
+        stopRingtone();
+        secretModal.classList.add('open');
+      }, 1800);
+    };
+
+    const cancelPress = () => {
+      if (pressTimer) clearTimeout(pressTimer);
+    };
+
+    callerNameEl.addEventListener('touchstart', startPress, { passive: true });
+    callerNameEl.addEventListener('touchend', cancelPress);
+    callerNameEl.addEventListener('mousedown', startPress);
+    callerNameEl.addEventListener('mouseup', cancelPress);
+    callerNameEl.addEventListener('mouseleave', cancelPress);
+
+    btnCloseModal.addEventListener('click', () => {
+      secretModal.classList.remove('open');
+    });
+
+    // Выбор пресета фильтра
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      if (btn.dataset.preset === currentPreset) btn.classList.add('selected');
+      else btn.classList.remove('selected');
+
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        currentPreset = btn.dataset.preset;
+        localStorage.setItem('hero_preset', currentPreset);
+        applyAudioFilter();
+      });
+    });
+
+    // Загрузка списка MP3 из папки GitHub через API
+    async function loadGithubTracks() {
+      const { username, repo, folder } = GITHUB_CONFIG;
+      if (username === 'ТВОЙ_НИК_НА_GITHUB') {
+        githubStatus.textContent = 'Укажи ник и репозиторий в коде index.html';
+        return;
+      }
+
+      githubStatus.textContent = 'Обновляем список с GitHub...';
+      try {
+        const apiUrl
